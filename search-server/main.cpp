@@ -61,8 +61,9 @@ public:
     void AddDocument(int document_id, const string& document) {
         document_count_++; 
         const vector<string> words = SplitIntoWordsNoStop(document);
+        double TF = 1.0 / words.size();
         for(const string& word : words){
-            word_to_documents_[word][document_id] += 1.0/words.size();
+            word_to_documents_[word][document_id] += TF;
         }
     }
 
@@ -81,6 +82,12 @@ public:
     }
     
 private:
+    struct MinusWords{
+        string text;
+        bool minus;
+        bool stop_words;
+    };
+    
     struct Query {
         set<string> plus_words;
         set<string> minus_words;
@@ -104,32 +111,43 @@ private:
         }
         return words;
     }
+    
+    MinusWords IsMinusWords(string word) const{
+        bool minus = false;
+        if (word[0] == '-') {
+            minus = true;
+            word = word.substr(1);
+        }
+        return {word, minus, IsStopWord(word)};
+    }
 
     Query ParseQuery(const string& text) const {
         Query query_words;
         for (const string& word : SplitIntoWordsNoStop(text)) {
-            if(count_if(word.begin(), word.end(), [](const char& ch) {
-                return ch == '-';
-            })){
-                string a = word;
-                a.erase(0,1);
-                query_words.minus_words.insert(a);
-            } else{
-                query_words.plus_words.insert(word);
+            const MinusWords query = IsMinusWords(word);
+            if (!query.stop_words) {
+                if (query.minus) {
+                    query_words.minus_words.insert(query.text);
+                } else {
+                    query_words.plus_words.insert(query.text);
+                }
             }
         }
         return query_words;
     }
-
+    
+    double IDF(const string& plus_word) const{
+        return log(static_cast<double>(document_count_)/static_cast<double>(word_to_documents_.at(plus_word).size()));
+    }
+    
     vector<Document> FindAllDocuments(const Query& query_words) const {
         map<int, double> document_to_relevance;
         vector<Document> relevance;
         
         for (const string& plus_word : query_words.plus_words) {
             if(word_to_documents_.count(plus_word) != 0){
-                double IDF = log(static_cast<double>(document_count_)/static_cast<double>(word_to_documents_.at(plus_word).size()));
                 for(const auto& [id, tf] : word_to_documents_.at(plus_word)){
-                    document_to_relevance[id] += IDF * tf;
+                    document_to_relevance[id] += IDF(plus_word) * tf;
                 }
             }
         }
