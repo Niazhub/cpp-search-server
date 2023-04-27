@@ -6,10 +6,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <numeric>
 
 using namespace std;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
+const int EPSILON = 1e-6;
 
 string ReadLine() {
     string s;
@@ -77,7 +79,7 @@ public:
 
     
     vector<Document> FindTopDocuments(const string& raw_query) const {
-        return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating){ return status == DocumentStatus::ACTUAL; });
+        return FindTopDocuments(raw_query,  DocumentStatus::ACTUAL);
     }
     
     vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus doc_status) const {
@@ -91,7 +93,7 @@ public:
 
         sort(matched_documents.begin(), matched_documents.end(),
              [](const Document& lhs, const Document& rhs) {
-                 if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+                 if (abs(lhs.relevance - rhs.relevance) < EPSILON) {
                      return lhs.rating > rhs.rating;
                  } else {
                      return lhs.relevance > rhs.relevance;
@@ -158,11 +160,7 @@ private:
         if (ratings.empty()) {
             return 0;
         }
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
-        return rating_sum / static_cast<int>(ratings.size());
+        return accumulate(ratings.begin(), ratings.end(), 0) / static_cast<int>(ratings.size());
     }
 
     struct QueryWord {
@@ -214,6 +212,8 @@ private:
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
             for (const auto [document_id, term_freq] : word_to_document_freqs_.at(word)) {
                 if (function_predicate(document_id, documents_.at(document_id).status, documents_.at(document_id).rating)) {
+                    /*Не понял, что имели ввиду под "Можно сохранить ссылку на информацию о документе, так можно будет обойтись одним поиском документа".
+                    Можете описать подробнее? Нам же нужно передать в лямбду 3 параметра*/
                     document_to_relevance[document_id] += term_freq * inverse_document_freq;
                 }
             }
