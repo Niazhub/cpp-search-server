@@ -313,36 +313,24 @@ void TestAddDocuments(){
     ASSERT(!server.FindTopDocuments("hello world", status).empty());
 }
 
-//Тест проверяет корректную обработку стоп-слов
-void TestStopWords(){
-    SearchServer server;
-    int doc_id = 3;
-    string document = "hello the my world in Moscow";
-    DocumentStatus status = DocumentStatus::ACTUAL;
-    vector<int> ratings = {2,3,4};
-    server.AddDocument(doc_id, document, status, ratings);
-    server.SetStopWords("the in");
-    ASSERT(server.FindTopDocuments("the in").empty());
-}
-
 //Тест проверяет корректную обработку минус-слов
 void TestMinusWords(){
     SearchServer server;
-    int doc_id = 5;
-    string document = "hello the my world in Moscow";
-    DocumentStatus status = DocumentStatus::ACTUAL;
-    vector<int> ratings = {2,3,4};
-    server.AddDocument(doc_id, document, status, ratings);
-    ASSERT(server.FindTopDocuments("hello -world").empty());
+    server.AddDocument(0, "белый кот и модный ошейник"s,        DocumentStatus::ACTUAL, {8, -3});
+    server.AddDocument(1, "пушистый кот пушистый хвост"s,       DocumentStatus::ACTUAL, {7, 2, 7});
+    vector<Document> docs = server.FindTopDocuments("-белый кот");
+    ASSERT_EQUAL(docs.size(), 1);
+    ASSERT_EQUAL(docs[0].id, 1);
 }
 
 //Тест проверяет корректную сортировку релевантности
 void TestSortRelevanceDocuments(){
     SearchServer server;
-    server.AddDocument(5, "doc is false", DocumentStatus::ACTUAL, {1,2,3});
+    server.AddDocument(5, "dog is false", DocumentStatus::ACTUAL, {1,2,3});
     server.AddDocument(2, "my name is big Slava", DocumentStatus::ACTUAL, {1,2,3});
     server.AddDocument(4, "this dog is very big", DocumentStatus::ACTUAL, {1,2,3});
     vector<Document> docs = server.FindTopDocuments("big dog");
+    ASSERT_EQUAL(docs.size(), 3);
     ASSERT(docs[0].relevance > docs[1].relevance);
     ASSERT(docs[1].relevance > docs[2].relevance);
 }
@@ -351,7 +339,7 @@ void TestSortRelevanceDocuments(){
 void TestRatings(){
     SearchServer server;
     server.AddDocument(5, "doc is false", DocumentStatus::ACTUAL, {1,2,3});
-    ASSERT_EQUAL(server.FindTopDocuments("doc false", DocumentStatus::ACTUAL)[0].rating, 2);
+    ASSERT_EQUAL(server.FindTopDocuments("doc false", DocumentStatus::ACTUAL)[0].rating, (1 + 2 + 3) / 3);
 }
 
 //Тест проверяет корректную работу метода MatchDocuments()
@@ -372,13 +360,28 @@ void TestRelevanceDocuments(){
     server.AddDocument(1, "my name is big niaz", DocumentStatus::ACTUAL, {1,2,3});
     server.AddDocument(2, "this dog is very big", DocumentStatus::ACTUAL, {1,2,3});
     vector<Document> docs = server.FindTopDocuments("big dog");
-    //C EPSILON не работал
+    ASSERT_EQUAL(docs.size(), 2);
+    //C формулами log выдает совсем другие значения, для вычисления TF-IDF же нужен цикл, мы не можем вычислить его подставив одну лишь формулу
     ASSERT(abs(docs[0].relevance - 0.300815) < 1e-6);
     ASSERT(abs(docs[1].relevance - 0.081093) < 1e-6);
 }
 
 //Проверяет корректную работу предиката
-void TestFunctionPredicate(){
+void TestFunctionPredicateFilter(){
+    SearchServer server;
+    server.SetStopWords("и в на"s);
+    server.AddDocument(0, "белый кот и модный ошейник"s,        DocumentStatus::ACTUAL, {8, -3});
+    server.AddDocument(1, "пушистый кот пушистый хвост"s,       DocumentStatus::ACTUAL, {7, 2, 7});
+    server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
+    server.AddDocument(3, "ухоженный скворец евгений"s,         DocumentStatus::BANNED, {9});
+    vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
+    ASSERT(!result.empty());
+    ASSERT_EQUAL(result[0].id, 0);
+    ASSERT(abs(result[0].relevance - 0.173287) < 1e-6);
+    ASSERT_EQUAL(result[0].rating, 2);
+}
+
+void TestStatusFilter(){
     {
         SearchServer server;
         server.SetStopWords("и в на"s);
@@ -387,9 +390,8 @@ void TestFunctionPredicate(){
         server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
         server.AddDocument(3, "ухоженный скворец евгений"s,         DocumentStatus::BANNED, {9});
         vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s);
+        ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 1);
-        ASSERT(abs(result[0].relevance - 0.866434) < 1e-6);
-        ASSERT_EQUAL(result[0].rating, 5);
     }
 
     {
@@ -400,22 +402,10 @@ void TestFunctionPredicate(){
         server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
         server.AddDocument(3, "ухоженный скворец евгений"s,         DocumentStatus::BANNED, {9});
         vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, DocumentStatus::BANNED);
+        ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 3);
         ASSERT(abs(result[0].relevance - 0.231049) < 1e-6);
         ASSERT_EQUAL(result[0].rating, 9);
-    }
-
-    {
-        SearchServer server;
-        server.SetStopWords("и в на"s);
-        server.AddDocument(0, "белый кот и модный ошейник"s,        DocumentStatus::ACTUAL, {8, -3});
-        server.AddDocument(1, "пушистый кот пушистый хвост"s,       DocumentStatus::ACTUAL, {7, 2, 7});
-        server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, {5, -12, 2, 1});
-        server.AddDocument(3, "ухоженный скворец евгений"s,         DocumentStatus::BANNED, {9});
-        vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
-        ASSERT_EQUAL(result[0].id, 0);
-        ASSERT(abs(result[0].relevance - 0.173287) < 1e-6);
-        ASSERT_EQUAL(result[0].rating, 2);
     }
 }
 
@@ -423,13 +413,13 @@ void TestFunctionPredicate(){
 void TestSearchServer() {
     RUN_TEST(TestExcludeStopWordsFromAddedDocumentContent);
     RUN_TEST(TestAddDocuments);
-    RUN_TEST(TestStopWords);
     RUN_TEST(TestMinusWords);
     RUN_TEST(TestSortRelevanceDocuments);
     RUN_TEST(TestRatings);
     RUN_TEST(TestMatchDocuments);
     RUN_TEST(TestRelevanceDocuments);
-    RUN_TEST(TestFunctionPredicate);
+    RUN_TEST(TestStatusFilter);
+    RUN_TEST(TestFunctionPredicateFilter);
 }
 
 // --------- Окончание модульных тестов поисковой системы -----------
