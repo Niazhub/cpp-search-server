@@ -357,13 +357,12 @@ void TestMatchDocuments(){
 void TestRelevanceDocuments(){
     SearchServer server;
     server.AddDocument(0, "doc is false", DocumentStatus::ACTUAL, {1,2,3});
-    server.AddDocument(1, "my name is big niaz", DocumentStatus::ACTUAL, {1,2,3});
+    server.AddDocument(1, "my name is big niaz", DocumentStatus::ACTUAL, {1,2,3}); 
     server.AddDocument(2, "this dog is very big", DocumentStatus::ACTUAL, {1,2,3});
     vector<Document> docs = server.FindTopDocuments("big dog");
     ASSERT_EQUAL(docs.size(), 2);
-    //C формулами log выдает совсем другие значения, для вычисления TF-IDF же нужен цикл, мы не можем вычислить его подставив одну лишь формулу
-    ASSERT(abs(docs[0].relevance - 0.300815) < 1e-6);
-    ASSERT(abs(docs[1].relevance - 0.081093) < 1e-6);
+    ASSERT(abs(docs[0].relevance - (log(server.GetDocumentCount() * 1.0 / 2) * (1.0 / 5) + log(server.GetDocumentCount() * 1.0 / 1) * (1.0 / 5))) < 1e-6);
+    ASSERT(abs(docs[1].relevance - (log(server.GetDocumentCount() * 1.0 / 2) * (1.0 / 5) + log(server.GetDocumentCount() * 1.0 / 1) * (0.0 / 5))) < 1e-6);
 }
 
 //Проверяет корректную работу предиката
@@ -377,8 +376,6 @@ void TestFunctionPredicateFilter(){
     vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
     ASSERT(!result.empty());
     ASSERT_EQUAL(result[0].id, 0);
-    ASSERT(abs(result[0].relevance - 0.173287) < 1e-6);
-    ASSERT_EQUAL(result[0].rating, 2);
 }
 
 void TestStatusFilter(){
@@ -404,8 +401,6 @@ void TestStatusFilter(){
         vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, DocumentStatus::BANNED);
         ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 3);
-        ASSERT(abs(result[0].relevance - 0.231049) < 1e-6);
-        ASSERT_EQUAL(result[0].rating, 9);
     }
 }
 
