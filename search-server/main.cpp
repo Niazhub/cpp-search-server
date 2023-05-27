@@ -217,13 +217,11 @@ private:
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
-        }
-        if(text.size() == 0){
-            throw invalid_argument("Ваш запрос состоит лишь из одного символа \"-\", попробуйте добавить к нему тест или вовсе убрать его!");
-        } else if(text[0] == '-'){
-            throw invalid_argument("Вы ввели некорректное минус-слово!");   
-        } else if(!IsValidWord(text)){
-            throw invalid_argument("В вашем запросе содержатся недопустимые символы!");
+            if(text.size() == 0){
+                throw invalid_argument("Ваш запрос состоит лишь из одного символа \"-\", попробуйте добавить к нему тест или вовсе убрать его!");
+            } else if(text[0] == '-'){
+                throw invalid_argument("Вы ввели некорректное минус-слово!");
+            }
         }
         return {text, is_minus, IsStopWord(text)};
     }
@@ -294,10 +292,9 @@ private:
             return c >= '\0' && c < ' ';
         });
     }
-
+  
     template <typename StringCollections>   
     static bool IsValidWords(StringCollections words) {
-        //Не совсем понял, как можно использовать алгоритм из std вместо цикла.
         for (const string& word : words) {
             if (!IsValidWord(word)) {
                 return false;
@@ -317,6 +314,8 @@ void PrintDocument(const Document& document) {
 }
 int main() {
     SearchServer search_server("и в на"s);
+    // Явно игнорируем результат метода AddDocument, чтобы избежать предупреждения
+    // о неиспользуемом результате его вызова
     search_server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, {7, 2, 7});
     try{
         search_server.AddDocument(1, "пушистый пёс и модный ошейник"s, DocumentStatus::ACTUAL, {1, 2});
@@ -334,7 +333,7 @@ int main() {
         cout << "Error: " << err.what() << endl;
     }
     try{
-        for(const auto& document : search_server.FindTopDocuments("пушистый - "s)){
+        for(const auto& document : search_server.FindTopDocuments("пушистый -"s)){
             PrintDocument(document);
         }
     } catch(const invalid_argument& err){
