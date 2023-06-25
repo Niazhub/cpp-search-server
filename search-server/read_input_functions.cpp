@@ -5,6 +5,7 @@ string ReadLine() {
     getline(cin, s);
     return s;
 }
+
 int ReadLineWithNumber() {
     int result;
     cin >> result;
