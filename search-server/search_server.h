@@ -48,9 +48,9 @@ public:
     
     int GetDocumentCount() const;
 
-    vector<int>::const_iterator begin() const;
+    set<int>::const_iterator begin() const;
 
-    vector<int>::const_iterator end() const;
+    set<int>::const_iterator end() const;
 
     const map<string, double>& GetWordFrequencies(int document_id) const;
 
@@ -71,7 +71,7 @@ private:
 
     map<int, DocumentData> documents_;
 
-    vector<int> document_ids_;
+    set<int> document_ids_;
 
     bool IsStopWord(const string& word) const;
     
