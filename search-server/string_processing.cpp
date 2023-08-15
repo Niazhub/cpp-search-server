@@ -1,20 +1,16 @@
 #include "string_processing.h"
 
-vector<string> SplitIntoWords(const string& text){
-    vector<string> words;
-    string word;
-    for (const char c : text) {
-        if (c == ' ') {
-            if (!word.empty()) {
-                words.push_back(word);
-                word.clear();
-            }
-        } else {
-            word += c;
+vector<string_view> SplitIntoWords(string_view text) {
+    vector<string_view> words;
+    while (true) {
+        const auto space = text.find(' ');
+        words.push_back(text.substr(0, space));
+        if (space == text.npos) {
+            break;
         }
-    }
-    if (!word.empty()) {
-        words.push_back(word);
+        else {
+            text.remove_prefix(space + 1);
+        }
     }
     return words;
 }
