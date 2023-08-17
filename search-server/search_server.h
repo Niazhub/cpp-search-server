@@ -46,9 +46,6 @@ public:
 
     void AddDocument(int document_id, const string_view& document, DocumentStatus status, const vector<int>& ratings);
 
-    template <typename DocumentPredicate>
-    vector<Document> FindTopDocuments(const string_view& raw_query, DocumentPredicate document_predicate) const;
-
     vector<Document> FindTopDocuments(const string_view& raw_query, DocumentStatus status) const;
 
     vector<Document> FindTopDocuments(const string_view& raw_query) const;
@@ -139,23 +136,6 @@ SearchServer::SearchServer(const StringContainer& stop_words)
     if (!all_of(stop_words_.begin(), stop_words_.end(), IsValidWord)) {
         throw invalid_argument("Some of stop words are invalid"s);
     }
-}
-
-template <typename DocumentPredicate>
-vector<Document> SearchServer::FindTopDocuments(const string_view& raw_query, DocumentPredicate document_predicate) const {
-    const auto query = ParseQuery(raw_query, true);
-
-    auto matched_documents = FindAllDocuments(execution::seq, query, document_predicate);
-
-    sort(matched_documents.begin(), matched_documents.end(),
-        [&](const Document& lhs, const Document& rhs) {
-            return lhs.relevance > rhs.relevance
-                || (abs(lhs.relevance - rhs.relevance) < EPSILON && lhs.rating > rhs.rating);
-        });
-    if (matched_documents.size() > MAX_RESULT_DOCUMENT_COUNT) {
-        matched_documents.resize(MAX_RESULT_DOCUMENT_COUNT);
-    }
-    return matched_documents;
 }
 
 template <typename ExecutionPolicy, typename DocumentPredicate>
