@@ -33,9 +33,9 @@ void TestAddDocuments() {
 
 void TestMinusWords() {
     SearchServer server;
-    server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::ACTUAL, { 8, -3 });
-    server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
-    vector<Document> docs = server.FindTopDocuments("-белый кот");
+    server.AddDocument(0, "ГЎГҐГ«Г»Г© ГЄГ®ГІ ГЁ Г¬Г®Г¤Г­Г»Г© Г®ГёГҐГ©Г­ГЁГЄ"s, DocumentStatus::ACTUAL, { 8, -3 });
+    server.AddDocument(1, "ГЇГіГёГЁГ±ГІГ»Г© ГЄГ®ГІ ГЇГіГёГЁГ±ГІГ»Г© ГµГўГ®Г±ГІ"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+    vector<Document> docs = server.FindTopDocuments("-ГЎГҐГ«Г»Г© ГЄГ®ГІ");
     ASSERT_EQUAL(docs.size(), 1);
     ASSERT_EQUAL(docs[0].id, 1);
 }
@@ -79,35 +79,35 @@ void TestRelevanceDocuments() {
 }
 
 void TestFunctionPredicateFilter() {
-    SearchServer server("и в на"s);
-    server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::ACTUAL, { 8, -3 });
-    server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
-    server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
-    server.AddDocument(3, "ухоженный скворец евгений"s, DocumentStatus::BANNED, { 9 });
-    vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
+    SearchServer server("ГЁ Гў Г­Г "s);
+    server.AddDocument(0, "ГЎГҐГ«Г»Г© ГЄГ®ГІ ГЁ Г¬Г®Г¤Г­Г»Г© Г®ГёГҐГ©Г­ГЁГЄ"s, DocumentStatus::ACTUAL, { 8, -3 });
+    server.AddDocument(1, "ГЇГіГёГЁГ±ГІГ»Г© ГЄГ®ГІ ГЇГіГёГЁГ±ГІГ»Г© ГµГўГ®Г±ГІ"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+    server.AddDocument(2, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЇВёГ± ГўГ»Г°Г Г§ГЁГІГҐГ«ГјГ­Г»ГҐ ГЈГ«Г Г§Г "s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
+    server.AddDocument(3, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© Г±ГЄГўГ®Г°ГҐГ¶ ГҐГўГЈГҐГ­ГЁГ©"s, DocumentStatus::BANNED, { 9 });
+    vector<Document> result = server.FindTopDocuments(std::seq, "ГЇГіГёГЁГ±ГІГ»Г© ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЄГ®ГІ"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
     ASSERT(!result.empty());
     ASSERT_EQUAL(result[0].id, 0);
 }
 
 void TestStatusFilter() {
     {
-        SearchServer server("и в на"s);
-        server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::ACTUAL, { 8, -3 });
-        server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
-        server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
-        server.AddDocument(3, "ухоженный скворец евгений"s, DocumentStatus::BANNED, { 9 });
-        vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s);
+        SearchServer server("ГЁ Гў Г­Г "s);
+        server.AddDocument(0, "ГЎГҐГ«Г»Г© ГЄГ®ГІ ГЁ Г¬Г®Г¤Г­Г»Г© Г®ГёГҐГ©Г­ГЁГЄ"s, DocumentStatus::ACTUAL, { 8, -3 });
+        server.AddDocument(1, "ГЇГіГёГЁГ±ГІГ»Г© ГЄГ®ГІ ГЇГіГёГЁГ±ГІГ»Г© ГµГўГ®Г±ГІ"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+        server.AddDocument(2, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЇВёГ± ГўГ»Г°Г Г§ГЁГІГҐГ«ГјГ­Г»ГҐ ГЈГ«Г Г§Г "s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
+        server.AddDocument(3, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© Г±ГЄГўГ®Г°ГҐГ¶ ГҐГўГЈГҐГ­ГЁГ©"s, DocumentStatus::BANNED, { 9 });
+        vector<Document> result = server.FindTopDocuments(std::seq, "ГЇГіГёГЁГ±ГІГ»Г© ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЄГ®ГІ"s);
         ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 1);
     }
 
     {
-        SearchServer server("и в на"s);
-        server.AddDocument(0, "белый кот и модный ошейник"s, DocumentStatus::ACTUAL, { 8, -3 });
-        server.AddDocument(1, "пушистый кот пушистый хвост"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
-        server.AddDocument(2, "ухоженный пёс выразительные глаза"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
-        server.AddDocument(3, "ухоженный скворец евгений"s, DocumentStatus::BANNED, { 9 });
-        vector<Document> result = server.FindTopDocuments("пушистый ухоженный кот"s, DocumentStatus::BANNED);
+        SearchServer server("ГЁ Гў Г­Г "s);
+        server.AddDocument(0, "ГЎГҐГ«Г»Г© ГЄГ®ГІ ГЁ Г¬Г®Г¤Г­Г»Г© Г®ГёГҐГ©Г­ГЁГЄ"s, DocumentStatus::ACTUAL, { 8, -3 });
+        server.AddDocument(1, "ГЇГіГёГЁГ±ГІГ»Г© ГЄГ®ГІ ГЇГіГёГЁГ±ГІГ»Г© ГµГўГ®Г±ГІ"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
+        server.AddDocument(2, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЇВёГ± ГўГ»Г°Г Г§ГЁГІГҐГ«ГјГ­Г»ГҐ ГЈГ«Г Г§Г "s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
+        server.AddDocument(3, "ГіГµГ®Г¦ГҐГ­Г­Г»Г© Г±ГЄГўГ®Г°ГҐГ¶ ГҐГўГЈГҐГ­ГЁГ©"s, DocumentStatus::BANNED, { 9 });
+        vector<Document> result = server.FindTopDocuments(std::seq, "ГЇГіГёГЁГ±ГІГ»Г© ГіГµГ®Г¦ГҐГ­Г­Г»Г© ГЄГ®ГІ"s, DocumentStatus::BANNED);
         ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 3);
     }
