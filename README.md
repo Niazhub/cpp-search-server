@@ -6,7 +6,7 @@
   <h2>Как использовать.</h2><br>
   <b>Запуск программы:</b><br>
   1. Убедитесь, что на вашем компьютере установлен компилятор C++.<br>
-  2. Клонируйте репозиторий: git clone https://github.com/Niazhub/cpp-single-linked-list.git<br>
+  2. Клонируйте репозиторий: git clone https://github.com/Niazhub/cpp-search-server.git<br>
   3. Перейдите в папку проекта: cd репозиторий<br>
   4. Соберите проект: g++ main.cpp -o search_app -std=c++11<br>
   5. Запустите программу: ./search_app<br>
