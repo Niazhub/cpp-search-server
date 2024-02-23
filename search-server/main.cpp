@@ -1,17 +1,24 @@
-﻿#include "process_queries.h"
+#include "process_queries.h"
 #include "search_server.h"
+#include "test_example_functions.h"
 #include <execution>
 #include <iostream>
 #include <string>
 #include <vector>
+
 using namespace std;
+
 void PrintDocument(const Document& document) {
     cout << "{ "s
         << "document_id = "s << document.id << ", "s
         << "relevance = "s << document.relevance << ", "s
         << "rating = "s << document.rating << " }"s << endl;
 }
+
 int main() {
+    TestSearchServer();
+    cerr << endl;
+
     SearchServer search_server("and with"s);
     int id = 0;
     for (
