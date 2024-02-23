@@ -7,7 +7,7 @@ void TestExcludeStopWordsFromAddedDocumentContent() {
     {
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        const auto found_docs = server.FindTopDocuments("in"s);
+        const auto found_docs = server.FindTopDocuments(execution::seq, "in"s);
         ASSERT_EQUAL(found_docs.size(), 1u);
         const Document& doc0 = found_docs[0];
         ASSERT_EQUAL(doc0.id, doc_id);
@@ -16,7 +16,7 @@ void TestExcludeStopWordsFromAddedDocumentContent() {
     {
         SearchServer server("in the"s);
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
-        ASSERT_HINT(server.FindTopDocuments("in"s).empty(),
+        ASSERT_HINT(server.FindTopDocuments(execution::seq, "in"s).empty(),
             "Stop words must be excluded from documents"s);
     }
 }
@@ -28,14 +28,14 @@ void TestAddDocuments() {
     DocumentStatus status = DocumentStatus::ACTUAL;
     vector<int> ratings = { 1,5,42 };
     server.AddDocument(doc_id, document, status, ratings);
-    ASSERT(!server.FindTopDocuments("hello world", status).empty());
+    ASSERT(!server.FindTopDocuments(execution::seq, "hello world", status).empty());
 }
 
 void TestMinusWords() {
     SearchServer server;
     server.AddDocument(0, "áåëûé êîò è ìîäíûé îøåéíèê"s, DocumentStatus::ACTUAL, { 8, -3 });
     server.AddDocument(1, "ïóøèñòûé êîò ïóøèñòûé õâîñò"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
-    vector<Document> docs = server.FindTopDocuments("-áåëûé êîò");
+    vector<Document> docs = server.FindTopDocuments(execution::seq, "-áåëûé êîò");
     ASSERT_EQUAL(docs.size(), 1);
     ASSERT_EQUAL(docs[0].id, 1);
 }
@@ -45,7 +45,7 @@ void TestSortRelevanceDocuments() {
     server.AddDocument(5, "dog is false", DocumentStatus::ACTUAL, { 1,2,3 });
     server.AddDocument(2, "my name is big Slava", DocumentStatus::ACTUAL, { 1,2,3 });
     server.AddDocument(4, "this dog is very big", DocumentStatus::ACTUAL, { 1,2,3 });
-    vector<Document> docs = server.FindTopDocuments("big dog");
+    vector<Document> docs = server.FindTopDocuments(execution::seq, "big dog");
     ASSERT_EQUAL(docs.size(), 3);
     ASSERT(docs[0].relevance > docs[1].relevance);
     ASSERT(docs[1].relevance > docs[2].relevance);
@@ -54,7 +54,7 @@ void TestSortRelevanceDocuments() {
 void TestRatings() {
     SearchServer server;
     server.AddDocument(5, "doc is false", DocumentStatus::ACTUAL, { 1,2,3 });
-    ASSERT_EQUAL(server.FindTopDocuments("doc false", DocumentStatus::ACTUAL)[0].rating, (1 + 2 + 3) / 3);
+    ASSERT_EQUAL(server.FindTopDocuments(execution::seq, "doc false", DocumentStatus::ACTUAL)[0].rating, (1 + 2 + 3) / 3);
 }
 
 void TestMatchDocuments() {
@@ -72,7 +72,7 @@ void TestRelevanceDocuments() {
     server.AddDocument(0, "doc is false", DocumentStatus::ACTUAL, { 1,2,3 });
     server.AddDocument(1, "my name is big niaz", DocumentStatus::ACTUAL, { 1,2,3 });
     server.AddDocument(2, "this dog is very big", DocumentStatus::ACTUAL, { 1,2,3 });
-    vector<Document> docs = server.FindTopDocuments("big dog");
+    vector<Document> docs = server.FindTopDocuments(execution::seq, "big dog");
     ASSERT_EQUAL(docs.size(), 2);
     ASSERT(abs(docs[0].relevance - (log(server.GetDocumentCount() * 1.0 / 2) * (1.0 / 5) + log(server.GetDocumentCount() * 1.0 / 1) * (1.0 / 5))) < 1e-6);
     ASSERT(abs(docs[1].relevance - (log(server.GetDocumentCount() * 1.0 / 2) * (1.0 / 5) + log(server.GetDocumentCount() * 1.0 / 1) * (0.0 / 5))) < 1e-6);
@@ -84,7 +84,7 @@ void TestFunctionPredicateFilter() {
     server.AddDocument(1, "ïóøèñòûé êîò ïóøèñòûé õâîñò"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
     server.AddDocument(2, "óõîæåííûé ï¸ñ âûðàçèòåëüíûå ãëàçà"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
     server.AddDocument(3, "óõîæåííûé ñêâîðåö åâãåíèé"s, DocumentStatus::BANNED, { 9 });
-    vector<Document> result = server.FindTopDocuments(std::seq, "ïóøèñòûé óõîæåííûé êîò"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
+    vector<Document> result = server.FindTopDocuments(execution::seq, "ïóøèñòûé óõîæåííûé êîò"s, [](int document_id, DocumentStatus status, int rating) { return document_id % 2 == 0; });
     ASSERT(!result.empty());
     ASSERT_EQUAL(result[0].id, 0);
 }
@@ -96,7 +96,7 @@ void TestStatusFilter() {
         server.AddDocument(1, "ïóøèñòûé êîò ïóøèñòûé õâîñò"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
         server.AddDocument(2, "óõîæåííûé ï¸ñ âûðàçèòåëüíûå ãëàçà"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
         server.AddDocument(3, "óõîæåííûé ñêâîðåö åâãåíèé"s, DocumentStatus::BANNED, { 9 });
-        vector<Document> result = server.FindTopDocuments(std::seq, "ïóøèñòûé óõîæåííûé êîò"s);
+        vector<Document> result = server.FindTopDocuments(execution::seq, "ïóøèñòûé óõîæåííûé êîò"s);
         ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 1);
     }
@@ -107,7 +107,7 @@ void TestStatusFilter() {
         server.AddDocument(1, "ïóøèñòûé êîò ïóøèñòûé õâîñò"s, DocumentStatus::ACTUAL, { 7, 2, 7 });
         server.AddDocument(2, "óõîæåííûé ï¸ñ âûðàçèòåëüíûå ãëàçà"s, DocumentStatus::ACTUAL, { 5, -12, 2, 1 });
         server.AddDocument(3, "óõîæåííûé ñêâîðåö åâãåíèé"s, DocumentStatus::BANNED, { 9 });
-        vector<Document> result = server.FindTopDocuments(std::seq, "ïóøèñòûé óõîæåííûé êîò"s, DocumentStatus::BANNED);
+        vector<Document> result = server.FindTopDocuments(execution::seq, "ïóøèñòûé óõîæåííûé êîò"s, DocumentStatus::BANNED);
         ASSERT(!result.empty());
         ASSERT_EQUAL(result[0].id, 3);
     }
